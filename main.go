@@ -1,9 +1,9 @@
 package main
 
 import (
-	"awesomeProject/src/github.com/lukaspj/go-chord"
 	"flag"
 	"fmt"
+	"./chord"
 )
 
 func main() {
@@ -15,24 +15,24 @@ func main() {
 
 	flag.Parse()
 
-	var nid go_chord.NodeID
+	var nid chord.NodeID
 	if *id != "" {
 		if len(*id) == 40 {
 			// Assume hex value
-			nid = go_chord.NewNodeID(*id)
+			nid = chord.NewNodeID(*id)
 		} else {
-			nid = go_chord.NewNodeIDFromHash(*id)
+			nid = chord.NewNodeIDFromHash(*id)
 		}
 	} else {
-		nid = go_chord.NewRandomNodeID()
+		nid = chord.NewRandomNodeID()
 	}
 
-	info := go_chord.ContactInfo{
+	info := chord.ContactInfo{
 		Id: nid,
 		Address: fmt.Sprintf("%s:%d", *host, *port),
 	}
 
-	peer := go_chord.NewPeer(info, *port)
+	peer := chord.NewPeer(info, *port)
 
 	peer.Listen()
 

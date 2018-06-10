@@ -1,13 +1,13 @@
-package go_chord
+package chord
 
 import (
-	"awesomeProject/src/github.com/lukaspj/go-logging"
 	"time"
 	"math"
+	"github.com/lukaspj/go-logging/logging"
 )
 
 var (
-	logger = go_logging.Logger{}
+	logger = logging.Logger{}
 )
 
 type tickingFunction struct {

@@ -1,4 +1,4 @@
-package go_chord
+package chord
 
 const successorListSize = 5
 

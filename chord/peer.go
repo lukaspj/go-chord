@@ -1,4 +1,4 @@
-package go_chord
+package chord
 
 import (
 	"net/rpc"
@@ -14,6 +14,12 @@ const stabilizationIntervalStart = time.Second
 const stabilizationIntervalEnd = 5 * time.Minute
 const fixFingersIntervalStart = time.Second
 const fixFingersIntervalEnd = 5 * time.Minute
+
+type ContactInfo struct {
+	Address string
+	Id      NodeID
+	Payload []byte
+}
 
 type Peer struct {
 	Info                     ContactInfo

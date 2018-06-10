@@ -1,16 +1,10 @@
-package go_chord
+package chord
 
 const fingerCount = 10
 
-// TODO better name and move out of finger_table
-type ContactInfo struct {
-	Address string
-	Id      NodeID
-}
-
 type fingerTable struct {
-	fingers       [fingerCount]ContactInfo
-	next          int
+	fingers [fingerCount]ContactInfo
+	next    int
 }
 
 func (table *fingerTable) GetFinger(index int) ContactInfo {
