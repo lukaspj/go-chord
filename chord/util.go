@@ -6,9 +6,7 @@ import (
 	"github.com/lukaspj/go-logging/logging"
 )
 
-var (
-	logger = logging.Logger{}
-)
+var logger = logging.GetLogger()
 
 type tickingFunction struct {
 	timer *time.Timer

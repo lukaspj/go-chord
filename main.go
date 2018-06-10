@@ -4,9 +4,15 @@ import (
 	"flag"
 	"fmt"
 	"./chord"
+	"github.com/lukaspj/go-logging/logging"
 )
 
+var logger = logging.GetLogger()
+
 func main() {
+	logger.SetLevel(logging.INFO)
+	logger.AddStdoutOutput()
+
 	port := flag.Int("sp", 5600, "Source port")
 	host := flag.String("sh", "127.0.0.1", "Source host")
 	id := flag.String("id", "", "id")
