@@ -2,7 +2,7 @@ package go_chord
 
 const fingerCount = 10
 
-// TODO better name
+// TODO better name and move out of finger_table
 type ContactInfo struct {
 	Address string
 	Id      NodeID
@@ -12,20 +12,6 @@ type fingerTable struct {
 	fingers       [fingerCount]ContactInfo
 	next          int
 }
-
-/*
-func (table *fingerTable) GetSuccessor() ContactInfo {
-	return table.fingers[0]
-}
-
-func (table *fingerTable) SetSuccessor(info ContactInfo) {
-	if !info.Id.Equals(table.fingers[0].Id) {
-		logger.Info("Setting successor to: %s", info.Id.String())
-		table.fingers[0] = info
-		table.lastDirtyTime = time.Now()
-	}
-}
-*/
 
 func (table *fingerTable) GetFinger(index int) ContactInfo {
 	return table.fingers[index]
