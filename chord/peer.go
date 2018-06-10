@@ -24,7 +24,7 @@ type ContactInfo struct {
 type Peer struct {
 	Info                     ContactInfo
 	Port                     int
-	network                  ChordNetwork
+	network                  chordNetwork
 	stabilizationFunction    tickingFunction
 	fixFingersFunction       tickingFunction
 	checkPredecessorFunction tickingFunction
@@ -120,6 +120,11 @@ func (peer *Peer) FindSuccessor(id NodeID) (info ContactInfo, err error) {
 			info, err = peer.network.FindSuccessor(n0, id)
 		}
 	}
+	return
+}
+
+func (peer *Peer) GetSuccessor() (info ContactInfo, err error) {
+	info = peer.network.successors.GetSuccessor(0)
 	return
 }
 

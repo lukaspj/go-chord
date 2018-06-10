@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type ChordNetwork struct {
+type chordNetwork struct {
 	fingerTable   fingerTable
 	successors    successorList
 	predecessor   *ContactInfo
@@ -14,7 +14,7 @@ type ChordNetwork struct {
 	lastDirtyTime time.Time
 }
 
-func NewChordNetwork(info *ContactInfo) (network ChordNetwork) {
+func NewChordNetwork(info *ContactInfo) (network chordNetwork) {
 	network.fingerTable = fingerTable{
 		fingers: [10]ContactInfo{},
 		next:    0,
@@ -24,7 +24,7 @@ func NewChordNetwork(info *ContactInfo) (network ChordNetwork) {
 	return
 }
 
-func (network *ChordNetwork) Call(contact ContactInfo, method string, args, reply interface{}) (err error) {
+func (network *chordNetwork) Call(contact ContactInfo, method string, args, reply interface{}) (err error) {
 	logger.Info("%s -> %s", method, contact.Address)
 	var client *rpc.Client
 	if client, err = rpc.DialHTTP("tcp", contact.Address); err == nil {
@@ -34,14 +34,14 @@ func (network *ChordNetwork) Call(contact ContactInfo, method string, args, repl
 	return
 }
 
-func (network *ChordNetwork) NewRpcHeader(id NodeID) RPCHeader {
+func (network *chordNetwork) NewRpcHeader(id NodeID) RPCHeader {
 	return RPCHeader{
 		Sender:     *network.localInfo,
 		ReceiverId: id,
 	}
 }
 
-func (network *ChordNetwork) Ping(address string) (info ContactInfo, err error) {
+func (network *chordNetwork) Ping(address string) (info ContactInfo, err error) {
 	info = ContactInfo{
 		Address: address,
 		Id:      NewEmptyNodeID(),
@@ -58,7 +58,7 @@ func (network *ChordNetwork) Ping(address string) (info ContactInfo, err error) 
 	return
 }
 
-func (network *ChordNetwork) FindSuccessor(info ContactInfo, id NodeID) (res ContactInfo, err error) {
+func (network *chordNetwork) FindSuccessor(info ContactInfo, id NodeID) (res ContactInfo, err error) {
 	request := FindSuccessorRequest{
 		RPCHeader: network.NewRpcHeader(info.Id),
 		Id:        id,
@@ -72,7 +72,7 @@ func (network *ChordNetwork) FindSuccessor(info ContactInfo, id NodeID) (res Con
 	return
 }
 
-func (network *ChordNetwork) ClosestPrecedingNode(info ContactInfo, id NodeID) (res ContactInfo, err error) {
+func (network *chordNetwork) ClosestPrecedingNode(info ContactInfo, id NodeID) (res ContactInfo, err error) {
 	request := ClosestPrecedingNodeRequest{
 		RPCHeader: network.NewRpcHeader(info.Id),
 		Id:        id,
@@ -85,7 +85,7 @@ func (network *ChordNetwork) ClosestPrecedingNode(info ContactInfo, id NodeID) (
 	return
 }
 
-func (network *ChordNetwork) Predecessor(info ContactInfo) (res *ContactInfo, err error) {
+func (network *chordNetwork) Predecessor(info ContactInfo) (res *ContactInfo, err error) {
 	request := PredecessorRequest{
 		RPCHeader: network.NewRpcHeader(info.Id),
 	}
@@ -97,7 +97,7 @@ func (network *ChordNetwork) Predecessor(info ContactInfo) (res *ContactInfo, er
 	return
 }
 
-func (network *ChordNetwork) Successor(info ContactInfo) (res ContactInfo, err error) {
+func (network *chordNetwork) Successor(info ContactInfo) (res ContactInfo, err error) {
 	request := SuccessorRequest{
 		RPCHeader: network.NewRpcHeader(info.Id),
 	}
@@ -109,7 +109,7 @@ func (network *ChordNetwork) Successor(info ContactInfo) (res ContactInfo, err e
 	return
 }
 
-func (network *ChordNetwork) Notify(info ContactInfo) (err error) {
+func (network *chordNetwork) Notify(info ContactInfo) (err error) {
 	request := NotifyRequest{
 		RPCHeader: network.NewRpcHeader(info.Id),
 	}
@@ -120,7 +120,7 @@ func (network *ChordNetwork) Notify(info ContactInfo) (err error) {
 	return
 }
 
-func (network *ChordNetwork) Stabilize() (err error) {
+func (network *chordNetwork) Stabilize() (err error) {
 	var x *ContactInfo
 
 	// Update succlist
@@ -173,7 +173,7 @@ func (network *ChordNetwork) Stabilize() (err error) {
 	return
 }
 
-func (network *ChordNetwork) FixFingers() (err error) {
+func (network *chordNetwork) FixFingers() (err error) {
 	network.fingerTable.next++
 	if network.fingerTable.next >= fingerCount {
 		network.fingerTable.next = 0
@@ -199,7 +199,7 @@ func (network *ChordNetwork) FixFingers() (err error) {
 	return
 }
 
-func (network *ChordNetwork) CheckPredecessor() (err error) {
+func (network *chordNetwork) CheckPredecessor() (err error) {
 	if network.predecessor != nil {
 		if _, err = network.Ping(network.predecessor.Address); err != nil {
 			logger.Warn("Connection to predecessor has been lost")
@@ -210,6 +210,6 @@ func (network *ChordNetwork) CheckPredecessor() (err error) {
 	return
 }
 
-func (network *ChordNetwork) TimeSinceChange() time.Duration {
+func (network *chordNetwork) TimeSinceChange() time.Duration {
 	return time.Now().Sub(network.lastDirtyTime)
 }
