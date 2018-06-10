@@ -123,7 +123,7 @@ func (peer *Peer) FindSuccessor(id NodeID) (info ContactInfo, err error) {
 	return
 }
 
-func (peer *Peer) GetSuccessor() (info ContactInfo, err error) {
+func (peer *Peer) GetSuccessor() (info ContactInfo) {
 	info = peer.network.successors.GetSuccessor(0)
 	return
 }
