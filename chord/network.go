@@ -25,7 +25,7 @@ func NewChordNetwork(info *ContactInfo) (network chordNetwork) {
 }
 
 func (network *chordNetwork) Call(contact ContactInfo, method string, args, reply interface{}) (err error) {
-	logger.Info("%s -> %s", method, contact.Address)
+	logger.Debug("%s -> %s", method, contact.Address)
 	var client *rpc.Client
 	if client, err = rpc.DialHTTP("tcp", contact.Address); err == nil {
 		err = client.Call(method, args, reply)

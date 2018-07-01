@@ -16,9 +16,9 @@ const fixFingersIntervalStart = time.Second
 const fixFingersIntervalEnd = 5 * time.Minute
 
 type ContactInfo struct {
-	Address string
-	Id      NodeID
-	Payload []byte
+	Address string `json:"address"`
+	Id      NodeID `json:"id"`
+	Payload []byte `json:"payload"`
 }
 
 type Peer struct {
@@ -124,8 +124,19 @@ func (peer *Peer) FindSuccessor(id NodeID) (info ContactInfo, err error) {
 }
 
 func (peer *Peer) GetSuccessor() (info ContactInfo) {
-	info = peer.network.successors.GetSuccessor(0)
-	return
+	return peer.network.successors.GetSuccessor(0)
+}
+
+func (peer *Peer) GetPredecessor() (info *ContactInfo) {
+	return peer.network.predecessor
+}
+
+func (peer *Peer) ResponsibleFor(id NodeID) bool {
+	return id.Between(peer.network.predecessor.Id, peer.Info.Id)
+}
+
+func (peer *Peer) Ping(address string) (info ContactInfo, err error) {
+	return peer.network.Ping(address)
 }
 
 func (peer *Peer) Poke() {

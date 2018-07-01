@@ -1,9 +1,9 @@
-package main
+package chord
 
 import (
 	"flag"
 	"fmt"
-	"./chord"
+	"../../chord"
 	"github.com/lukaspj/go-logging/logging"
 )
 

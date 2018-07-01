@@ -19,7 +19,7 @@ type PingResponse struct {
 
 func (pw *ChordApi) Ping(args *PingRequest, response *PingResponse) (err error) {
 	if err = pw.peer.HandleRPC(&args.RPCHeader, &response.RPCHeader); err == nil {
-		logger.Info("Ping from %s\n", args.RPCHeader)
+		logger.Debug("Ping from %s\n", args.RPCHeader)
 	} else {
 		logger.Error("error happened: %v\n", err)
 	}

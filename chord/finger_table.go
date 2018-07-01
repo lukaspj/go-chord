@@ -13,7 +13,7 @@ func (table *fingerTable) GetFinger(index int) ContactInfo {
 
 func (table *fingerTable) SetFinger(index int, info ContactInfo) bool {
 	if !info.Id.Equals(table.fingers[index].Id) {
-		logger.Info("Setting finger %d to: %s", index, info.Id.String())
+		logger.Debug("Setting finger %d to: %s", index, info.Id.String())
 		table.fingers[index] = info
 		return true
 	}

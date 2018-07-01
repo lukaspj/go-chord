@@ -10,7 +10,7 @@ import (
 const IdLength = 20
 
 type NodeID struct {
-	Val []byte
+	Val []byte `json:"val"`
 }
 
 func NewNodeID(data string) (ret NodeID) {
