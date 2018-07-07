@@ -1,9 +1,11 @@
 package chord
 
 import (
-	"net/rpc"
-	"math/big"
 	"time"
+	"math/big"
+	"github.com/lukaspj/go-chord/api"
+	"google.golang.org/grpc"
+	"context"
 )
 
 type chordNetwork struct {
@@ -14,109 +16,104 @@ type chordNetwork struct {
 	lastDirtyTime time.Time
 }
 
-func NewChordNetwork(info *ContactInfo) (network chordNetwork) {
-	network.fingerTable = fingerTable{
-		fingers: [10]ContactInfo{},
-		next:    0,
+func NewChordNetwork(info *ContactInfo) (network *chordNetwork) {
+	network = &chordNetwork{
+		fingerTable:   fingerTable{
+			fingers: [10]*ContactInfo{},
+			next:    0,
+		},
+		localInfo:     info,
 	}
-	network.localInfo = info
 
 	return
 }
 
-func (network *chordNetwork) Call(contact ContactInfo, method string, args, reply interface{}) (err error) {
-	logger.Debug("%s -> %s", method, contact.Address)
-	var client *rpc.Client
-	if client, err = rpc.DialHTTP("tcp", contact.Address); err == nil {
-		err = client.Call(method, args, reply)
-		client.Close()
+func (network *chordNetwork) Call(contact *ContactInfo, cb func(client api.ChordClient) error) (err error) {
+	conn, err := grpc.Dial(contact.Address, grpc.WithInsecure())
+	defer conn.Close()
+
+	if err != nil {
+		logger.Error("error communicating with grpc server [%s]: %v", contact.Address, err)
+		return
 	}
+	client := api.NewChordClient(conn)
+	err = cb(client)
+
 	return
 }
 
-func (network *chordNetwork) NewRpcHeader(id NodeID) RPCHeader {
-	return RPCHeader{
-		Sender:     *network.localInfo,
-		ReceiverId: id,
-	}
-}
-
-func (network *chordNetwork) Ping(address string) (info ContactInfo, err error) {
-	info = ContactInfo{
+func (network *chordNetwork) Ping(address string) (info *ContactInfo, err error) {
+	info = &ContactInfo{
 		Address: address,
 		Id:      NewEmptyNodeID(),
 	}
 
-	args := PingRequest{
-		RPCHeader: network.NewRpcHeader(NewEmptyNodeID()),
-	}
+	network.Call(info, func(client api.ChordClient) error {
+		var ci *api.ContactInfo
+		ci, err = client.Ping(context.Background(), &api.Void{})
+		if err == nil {
+			info = NewContactInfoFromAPI(ci)
+		}
+		return err
+	})
 
-	reply := PingResponse{}
-
-	err = network.Call(info, "ChordApi.Ping", &args, &reply)
-	info = reply.Sender
 	return
 }
 
-func (network *chordNetwork) FindSuccessor(info ContactInfo, id NodeID) (res ContactInfo, err error) {
-	request := FindSuccessorRequest{
-		RPCHeader: network.NewRpcHeader(info.Id),
-		Id:        id,
-	}
+func (network *chordNetwork) FindSuccessor(info *ContactInfo, id NodeID) (res *ContactInfo, err error) {
+	network.Call(info, func(client api.ChordClient) error {
+		var ci *api.ContactInfo
+		ci, err = client.FindSuccessor(context.Background(), &api.Id{Hash: id.String()})
+		if err == nil {
+			res = NewContactInfoFromAPI(ci)
+		}
+		return err
+	})
 
-	response := FindSuccessorResponse{}
-
-	err = network.Call(info, "ChordApi.FindSuccessor", request, &response)
-
-	res = response.Info
 	return
 }
 
-func (network *chordNetwork) ClosestPrecedingNode(info ContactInfo, id NodeID) (res ContactInfo, err error) {
-	request := ClosestPrecedingNodeRequest{
-		RPCHeader: network.NewRpcHeader(info.Id),
-		Id:        id,
-	}
-
-	response := ClosestPrecedingNodeResponse{}
-
-	err = network.Call(info, "ChordApi.ClosestPrecedingNode", &request, &response)
-	res = response.Info
+func (network *chordNetwork) ClosestPrecedingNode(info *ContactInfo, id NodeID) (res *ContactInfo, err error) {
+	network.Call(info, func(client api.ChordClient) error {
+		var ci *api.ContactInfo
+		ci, err = client.ClosestPrecedingNode(context.Background(), &api.Id{Hash: id.String()})
+		if err == nil {
+			res = NewContactInfoFromAPI(ci)
+		}
+		return err
+	})
 	return
 }
 
-func (network *chordNetwork) Predecessor(info ContactInfo) (res *ContactInfo, err error) {
-	request := PredecessorRequest{
-		RPCHeader: network.NewRpcHeader(info.Id),
-	}
-
-	response := PredecessorResponse{}
-
-	err = network.Call(info, "ChordApi.Predecessor", &request, &response)
-	res = response.Info
+func (network *chordNetwork) Predecessor(info *ContactInfo) (res *ContactInfo, err error) {
+	network.Call(info, func(client api.ChordClient) error {
+		var ci *api.ContactInfo
+		ci, err = client.Predecessor(context.Background(), &api.Void{})
+		if err == nil {
+			res = NewContactInfoFromAPI(ci)
+		}
+		return err
+	})
 	return
 }
 
-func (network *chordNetwork) Successor(info ContactInfo) (res ContactInfo, err error) {
-	request := SuccessorRequest{
-		RPCHeader: network.NewRpcHeader(info.Id),
-	}
-
-	response := SuccessorResponse{}
-
-	err = network.Call(info, "ChordApi.Successor", &request, &response)
-	res = response.Info
+func (network *chordNetwork) Successor(info *ContactInfo) (res *ContactInfo, err error) {
+	network.Call(info, func(client api.ChordClient) error {
+		var ci *api.ContactInfo
+		ci, err = client.Successor(context.Background(), &api.Void{})
+		if err == nil {
+			res = NewContactInfoFromAPI(ci)
+		}
+		return err
+	})
 	return
 }
 
-func (network *chordNetwork) Notify(info ContactInfo) (err error) {
-	request := NotifyRequest{
-		RPCHeader: network.NewRpcHeader(info.Id),
-	}
-
-	response := NotifyResponse{}
-
-	err = network.Call(info, "ChordApi.Notify", &request, &response)
+func (network *chordNetwork) Notify(info *ContactInfo) (err error) {
+	network.Call(info, func(client api.ChordClient) error {
+		_, err = client.Notify(context.Background(), network.localInfo.ToAPI())
+		return err
+	})
 	return
 }
 
@@ -125,7 +122,7 @@ func (network *chordNetwork) Stabilize() (err error) {
 
 	// Update succlist
 	for _, succ := range network.successors{
-		if succ.Id.IsZero() {
+		if succ == nil || succ.Id.IsZero() {
 			continue
 		}
 
@@ -139,7 +136,7 @@ func (network *chordNetwork) Stabilize() (err error) {
 		dirty := false
 		dirty = network.successors.SetSuccessor(0, succ) || dirty
 
-		var prev, curr ContactInfo
+		var prev, curr *ContactInfo
 		for i := 1; i < len(network.successors); i++ {
 			prev = network.successors.GetSuccessor(i - 1)
 			curr, err = network.Successor(prev)
@@ -165,7 +162,7 @@ func (network *chordNetwork) Stabilize() (err error) {
 	}
 
 	if x != nil && x.Id.Between(network.localInfo.Id, successor.Id) {
-		if network.successors.SetSuccessor(0, *x) {
+		if network.successors.SetSuccessor(0, x) {
 			network.lastDirtyTime = time.Now()
 		}
 	}
@@ -190,11 +187,13 @@ func (network *chordNetwork) FixFingers() (err error) {
 
 	fingerId.Val = tmp.Mod(&a, &b).Bytes()
 
-	var successor ContactInfo
-	successor, err = network.FindSuccessor(*network.localInfo, fingerId)
+	var successor *ContactInfo
+	successor, err = network.FindSuccessor(network.localInfo, fingerId)
 
-	if network.fingerTable.SetFinger(network.fingerTable.next, successor) {
-		network.lastDirtyTime = time.Now()
+	if err == nil {
+		if network.fingerTable.SetFinger(network.fingerTable.next, successor) {
+			network.lastDirtyTime = time.Now()
+		}
 	}
 	return
 }

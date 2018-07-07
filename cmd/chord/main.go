@@ -1,4 +1,4 @@
-package chord
+package main
 
 import (
 	"flag"
@@ -25,15 +25,15 @@ func main() {
 	if *id != "" {
 		if len(*id) == 40 {
 			// Assume hex value
-			nid = chord.NewNodeID(*id)
+			nid = chord.NewNodeIDFromString(*id)
 		} else {
 			nid = chord.NewNodeIDFromHash(*id)
 		}
 	} else {
-		nid = chord.NewRandomNodeID()
+		nid = chord.NewNodeIDFromHash(fmt.Sprintf("%s%d", *host, *port))
 	}
 
-	info := chord.ContactInfo{
+	info := &chord.ContactInfo{
 		Id: nid,
 		Address: fmt.Sprintf("%s:%d", *host, *port),
 	}

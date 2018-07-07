@@ -1,12 +1,12 @@
 package chord
 
 import (
-	"net/rpc"
 	"net"
-	"net/http"
 	"fmt"
-	"errors"
 	"time"
+	"context"
+	"github.com/lukaspj/go-chord/api"
+	"google.golang.org/grpc"
 )
 
 const gearDownPeriod = time.Minute
@@ -21,32 +21,130 @@ type ContactInfo struct {
 	Payload []byte `json:"payload"`
 }
 
+func (ci *ContactInfo) ToAPI() *api.ContactInfo {
+	return &api.ContactInfo{
+		Address: ci.Address,
+		Id: ci.Id.ToAPI(),
+		Payload: ci.Payload,
+	}
+}
+
+func NewContactInfoFromAPI(info *api.ContactInfo) *ContactInfo {
+	if info.Id == nil {
+		return nil
+	}
+	return &ContactInfo{
+		Address: info.Address,
+		Id: NewNodeIDFromAPI(info.Id),
+		Payload: info.Payload,
+	}
+}
+
 type Peer struct {
-	Info                     ContactInfo
+	Info                     *ContactInfo
 	Port                     int
-	network                  chordNetwork
+	network                  *chordNetwork
 	stabilizationFunction    tickingFunction
 	fixFingersFunction       tickingFunction
 	checkPredecessorFunction tickingFunction
 }
 
-func NewPeer(info ContactInfo, port int) (peer Peer) {
-	logger.Info("Creating new peer, with id: %s", info.Id.String())
-	peer.Port = port
-	peer.Info = info
-	peer.network = NewChordNetwork(&peer.Info)
+func (peer *Peer) Ping(ctx context.Context, void *api.Void) (info *api.ContactInfo, err error) {
+	logger.Debug("Ping")
+	info = peer.Info.ToAPI()
+	if info == nil {
+		logger.Error("Error")
+	}
 	return
 }
 
-func (peer *Peer) HandleRPC(request, response *RPCHeader) error {
-	if !request.ReceiverId.IsZero() && !request.ReceiverId.Equals(peer.Info.Id) {
-		return errors.New(fmt.Sprintf("Expected network ID %s, got %s",
-			peer.Info.Id, request.ReceiverId))
+func (peer *Peer) FindSuccessor(ctx context.Context, in_id *api.Id) (info *api.ContactInfo, err error) {
+	successor := peer.network.successors.GetSuccessor(0)
+
+	id := NewNodeID(in_id)
+
+	logger.Debug("FindSuccessor to: %s", id.String())
+
+	// if (id ∈ (n, successor] )
+	if id.Between(peer.Info.Id, successor.Id) {
+		// return successor;
+		info = successor.ToAPI()
+	} else {
+		// forward the query around the circle
+		// n0 = successor.closest_preceding_node(id);
+		var n0 *ContactInfo
+		n0, err = peer.network.ClosestPrecedingNode(successor, id)
+
+		// return n0.find_successor(id);
+		if err == nil {
+			successor, err = peer.network.FindSuccessor(n0, id)
+			info = successor.ToAPI()
+		}
 	}
 
-	response.Sender = peer.Info
-	response.ReceiverId = request.Sender.Id
-	return nil
+	return
+}
+
+func (peer *Peer) ClosestPrecedingNode(ctx context.Context, in_id *api.Id) (info *api.ContactInfo, err error) {
+	id := NewNodeID(in_id)
+	logger.Debug("ClosestPrecedingNode to: %s", id.String())
+
+	for i := fingerCount - 1; i >= 0; i-- {
+		finger := peer.network.fingerTable.fingers[i]
+		if finger.Id.Between(peer.Info.Id, id) {
+			info = finger.ToAPI()
+			return
+		}
+	}
+
+	return
+}
+
+func (peer *Peer) Predecessor(ctx context.Context, void *api.Void) (info *api.ContactInfo, err error) {
+	logger.Debug("Predecessor")
+	predecessor := peer.GetPredecessor()
+	if predecessor != nil {
+		info = peer.GetPredecessor().ToAPI()
+	} else {
+		info = &api.ContactInfo{}
+	}
+
+	return
+}
+
+func (peer *Peer) Successor(ctx context.Context, void *api.Void) (info *api.ContactInfo, err error) {
+	logger.Debug("Successor")
+	successor := peer.GetSuccessor()
+	if successor != nil {
+		info = peer.GetSuccessor().ToAPI()
+	} else {
+		info = &api.ContactInfo{}
+	}
+
+	return
+}
+
+func (peer *Peer) Notify(ctx context.Context, in_sender *api.ContactInfo) (ret *api.Void, err error) {
+	sender := NewContactInfoFromAPI(in_sender)
+
+	logger.Debug("Notify: %s", sender.Address)
+
+	if peer.network.predecessor == nil || sender.Id.Between(peer.network.predecessor.Id, sender.Id) {
+		peer.network.predecessor = sender
+		peer.Poke()
+	}
+	ret = &api.Void{}
+
+	return
+}
+
+func NewPeer(info *ContactInfo, port int) (peer Peer) {
+	logger.Info("Creating new peer, with id: %s", info.Id.String())
+	peer.Port = port
+	peer.Info = info
+	peer.network = NewChordNetwork(peer.Info)
+
+	return
 }
 
 func (peer *Peer) Listen() {
@@ -57,22 +155,28 @@ func (peer *Peer) Listen() {
 		peer.network.lastDirtyTime = time.Now()
 	}
 
-	rpc.Register(&ChordApi{peer})
+	grpcServer := grpc.NewServer()
+	api.RegisterChordServer(grpcServer, peer)
 
-	rpc.HandleHTTP()
 	if l, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", peer.Port)); err == nil {
-		go http.Serve(l, nil)
+		go grpcServer.Serve(l)
 	}
 
 	peer.stabilizationFunction = StartTickingFunction(func() int {
 		interpolate := cubic(float64(stabilizationIntervalStart), float64(stabilizationIntervalEnd))
-		peer.network.Stabilize()
+		err := peer.network.Stabilize()
+		if err != nil {
+			logger.Error("error when stabilizing: %v", err)
+		}
 		return int(interpolate(float64(peer.network.TimeSinceChange()) / float64(gearDownPeriod)))
 	})
 
 	peer.fixFingersFunction = StartTickingFunction(func() int {
 		interpolate := cubic(float64(fixFingersIntervalStart), float64(fixFingersIntervalEnd))
-		peer.network.FixFingers()
+		err := peer.network.FixFingers()
+		if err != nil {
+			logger.Error("error when fixing fingers: %v", err)
+		}
 		return int(interpolate(float64(peer.network.TimeSinceChange()) / float64(gearDownPeriod)))
 	})
 
@@ -86,11 +190,11 @@ func (peer *Peer) Listen() {
 }
 
 func (peer *Peer) Connect(address string) (err error) {
-	var info ContactInfo
+	var info *ContactInfo
 	logger.Info("Connecting to: %s", address)
 	if info, err = peer.network.Ping(address); err == nil {
 		logger.Info("Connection successful, remote peer is: %s", info.Id.String())
-		var successor ContactInfo
+		var successor *ContactInfo
 		logger.Info("Looking up successor to: %s", peer.Info.Id.String())
 		successor, err = peer.network.FindSuccessor(info, peer.Info.Id)
 		if peer.network.successors.SetSuccessor(0, successor) {
@@ -102,28 +206,7 @@ func (peer *Peer) Connect(address string) (err error) {
 	return
 }
 
-func (peer *Peer) FindSuccessor(id NodeID) (info ContactInfo, err error) {
-	successor := peer.network.successors.GetSuccessor(0)
-
-	// if (id ∈ (n, successor] )
-	if id.Between(peer.Info.Id, successor.Id) {
-		// return successor;
-		info = successor
-	} else {
-		// forward the query around the circle
-		// n0 = successor.closest_preceding_node(id);
-		var n0 ContactInfo
-		n0, err = peer.network.ClosestPrecedingNode(successor, id)
-
-		// return n0.find_successor(id);
-		if err == nil {
-			info, err = peer.network.FindSuccessor(n0, id)
-		}
-	}
-	return
-}
-
-func (peer *Peer) GetSuccessor() (info ContactInfo) {
+func (peer *Peer) GetSuccessor() (info *ContactInfo) {
 	return peer.network.successors.GetSuccessor(0)
 }
 
@@ -133,10 +216,6 @@ func (peer *Peer) GetPredecessor() (info *ContactInfo) {
 
 func (peer *Peer) ResponsibleFor(id NodeID) bool {
 	return id.Between(peer.network.predecessor.Id, peer.Info.Id)
-}
-
-func (peer *Peer) Ping(address string) (info ContactInfo, err error) {
-	return peer.network.Ping(address)
 }
 
 func (peer *Peer) Poke() {
