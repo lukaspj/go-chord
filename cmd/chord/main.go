@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"../../chord"
 	"github.com/lukaspj/go-logging/logging"
+	"github.com/lukaspj/go-chord/chord"
 )
 
 var logger = logging.GetLogger()

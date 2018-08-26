@@ -25,6 +25,10 @@ func NewChordNetwork(info *ContactInfo) (network *chordNetwork) {
 		localInfo:     info,
 	}
 
+	for i := range network.successors {
+		network.successors.SetSuccessor(i, info)
+	}
+
 	return
 }
 
@@ -120,34 +124,7 @@ func (network *chordNetwork) Notify(info *ContactInfo) (err error) {
 func (network *chordNetwork) Stabilize() (err error) {
 	var x *ContactInfo
 
-	// Update succlist
-	for _, succ := range network.successors{
-		if succ == nil || succ.Id.IsZero() {
-			continue
-		}
-
-		succ, err = network.Ping(succ.Address)
-		if err != nil {
-			logger.Error("unresponsive successor, trying to rebuild successorlist from the next successor")
-			continue
-		}
-
-		// Found a stable successor, build list
-		dirty := false
-		dirty = network.successors.SetSuccessor(0, succ) || dirty
-
-		var prev, curr *ContactInfo
-		for i := 1; i < len(network.successors); i++ {
-			prev = network.successors.GetSuccessor(i - 1)
-			curr, err = network.Successor(prev)
-			dirty = network.successors.SetSuccessor(i, curr) || dirty
-		}
-
-		if dirty {
-			network.lastDirtyTime = time.Now()
-		}
-		break
-	}
+	network.UpdateSuccessorList()
 
 	successor := network.successors.GetSuccessor(0)
 	x, err = network.Predecessor(successor)
@@ -168,6 +145,41 @@ func (network *chordNetwork) Stabilize() (err error) {
 	}
 	network.Notify(successor)
 	return
+}
+
+func (network *chordNetwork) UpdateSuccessorList() {
+	var err error
+	for i, succ := range network.successors {
+		if succ == nil || succ.Id.IsZero() {
+			continue
+		}
+
+		succ, err = network.Ping(succ.Address)
+		if err != nil {
+			logger.Error("unresponsive successor, trying to rebuild successorlist from the next successor")
+			continue
+		}
+
+		// Found a stable successor, build list
+		dirty := false
+		dirty = network.successors.SetSuccessor(0, succ) || dirty
+
+		var prev, curr *ContactInfo
+		for j := i + 1; j < len(network.successors); j++ {
+			prev = network.successors.GetSuccessor(j - 1)
+			curr, err = network.Successor(prev)
+			if err != nil {
+				logger.Info("we lost the connection to successor %d while updating the successorlist: %v", j, err)
+				curr = prev
+			}
+			dirty = network.successors.SetSuccessor(j, curr) || dirty
+		}
+
+		if dirty {
+			network.lastDirtyTime = time.Now()
+		}
+		break
+	}
 }
 
 func (network *chordNetwork) FixFingers() (err error) {

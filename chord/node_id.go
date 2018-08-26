@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"crypto/sha256"
 	"math/big"
-	"github.com/lukaspj/go-chord/api"
 )
 
 const IdLength = 20
@@ -14,20 +13,12 @@ type NodeID struct {
 	Val []byte `json:"val"`
 }
 
-func NewNodeID(id *api.Id) (ret NodeID) {
-	if id.Id != "" {
-		ret = NewNodeIDFromHash(id.Id)
-	} else {
-		ret = NewNodeIDFromString(id.Hash)
-	}
-	return
-}
-
 func NewNodeIDFromString(id string) (ret NodeID) {
 	decoded, err := hex.DecodeString(id)
 
 	if err != nil {
-		panic(err)
+		logger.Error("failed to decode string: %s", id)
+		return
 	}
 
 	ret.Val = decoded
@@ -38,12 +29,6 @@ func NewNodeIDFromHash(data string) (ret NodeID) {
 	hashbytes := sha256.Sum256([]byte(data))
 	ret.Val = hashbytes[:]
 	return
-}
-
-func NewNodeIDFromAPI(id *api.NodeId) NodeID {
-	return NodeID{
-		Val: id.Val,
-	}
 }
 
 func NewRandomNodeID() (ret NodeID) {
@@ -57,12 +42,6 @@ func NewRandomNodeID() (ret NodeID) {
 
 func NewEmptyNodeID() (ret NodeID) {
 	return
-}
-
-func (node NodeID) ToAPI() *api.NodeId {
-	return &api.NodeId{
-		Val: node.Val,
-	}
 }
 
 func (node NodeID) BigInt() *big.Int {

@@ -4,23 +4,25 @@ GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
-PROTOC=protoc -I api/
-BINARY_NAME=chord
-BINARY_UNIX=$(BINARY_NAME)_unix
+PROTOC=protoc -I $(GOPATH)/src -I api/
+BINARY_DIR=bin/
+BINARY_WINDOWS=$(BINARY_DIR)chord.exe
+BINARY_UNIX=$(BINARY_DIR)$(BINARY_NAME)_unix
+PKG=github.com/lukaspj/go-chord
 
 all: test build
 
 build:
-	$(GOBUILD) -o $(BINARY_NAME) -v
+	$(GOBUILD) -o $(BINARY_WINDOWS) -v $(PKG)/cmd/chord
 test:
 	$(GOTEST) -v ./...
 clean:
 	$(GOCLEAN)
-	rm -f $(BINARY_NAME)
+	rm -f $(BINARY_WINDOWS)
 	rm -f $(BINARY_UNIX)
 run:
-	$(GOBUILD) -o $(BINARY_NAME) -v ./...
-	./$(BINARY_NAME)
+	$(GOBUILD) -o $(BINARY_WINDOWS) -v ./...
+	./$(BINARY_WINDOWS)
 deps:
 	$(GOGET) github.com/lukaspj/go-logging/logging
 generate:

@@ -21,25 +21,6 @@ type ContactInfo struct {
 	Payload []byte `json:"payload"`
 }
 
-func (ci *ContactInfo) ToAPI() *api.ContactInfo {
-	return &api.ContactInfo{
-		Address: ci.Address,
-		Id: ci.Id.ToAPI(),
-		Payload: ci.Payload,
-	}
-}
-
-func NewContactInfoFromAPI(info *api.ContactInfo) *ContactInfo {
-	if info.Id == nil {
-		return nil
-	}
-	return &ContactInfo{
-		Address: info.Address,
-		Id: NewNodeIDFromAPI(info.Id),
-		Payload: info.Payload,
-	}
-}
-
 type Peer struct {
 	Info                     *ContactInfo
 	Port                     int
@@ -47,95 +28,6 @@ type Peer struct {
 	stabilizationFunction    tickingFunction
 	fixFingersFunction       tickingFunction
 	checkPredecessorFunction tickingFunction
-}
-
-func (peer *Peer) Ping(ctx context.Context, void *api.Void) (info *api.ContactInfo, err error) {
-	logger.Debug("Ping")
-	info = peer.Info.ToAPI()
-	if info == nil {
-		logger.Error("Error")
-	}
-	return
-}
-
-func (peer *Peer) FindSuccessor(ctx context.Context, in_id *api.Id) (info *api.ContactInfo, err error) {
-	successor := peer.network.successors.GetSuccessor(0)
-
-	id := NewNodeID(in_id)
-
-	logger.Debug("FindSuccessor to: %s", id.String())
-
-	// if (id ∈ (n, successor] )
-	if id.Between(peer.Info.Id, successor.Id) {
-		// return successor;
-		info = successor.ToAPI()
-	} else {
-		// forward the query around the circle
-		// n0 = successor.closest_preceding_node(id);
-		var n0 *ContactInfo
-		n0, err = peer.network.ClosestPrecedingNode(successor, id)
-
-		// return n0.find_successor(id);
-		if err == nil {
-			successor, err = peer.network.FindSuccessor(n0, id)
-			info = successor.ToAPI()
-		}
-	}
-
-	return
-}
-
-func (peer *Peer) ClosestPrecedingNode(ctx context.Context, in_id *api.Id) (info *api.ContactInfo, err error) {
-	id := NewNodeID(in_id)
-	logger.Debug("ClosestPrecedingNode to: %s", id.String())
-
-	for i := fingerCount - 1; i >= 0; i-- {
-		finger := peer.network.fingerTable.fingers[i]
-		if finger.Id.Between(peer.Info.Id, id) {
-			info = finger.ToAPI()
-			return
-		}
-	}
-
-	return
-}
-
-func (peer *Peer) Predecessor(ctx context.Context, void *api.Void) (info *api.ContactInfo, err error) {
-	logger.Debug("Predecessor")
-	predecessor := peer.GetPredecessor()
-	if predecessor != nil {
-		info = peer.GetPredecessor().ToAPI()
-	} else {
-		info = &api.ContactInfo{}
-	}
-
-	return
-}
-
-func (peer *Peer) Successor(ctx context.Context, void *api.Void) (info *api.ContactInfo, err error) {
-	logger.Debug("Successor")
-	successor := peer.GetSuccessor()
-	if successor != nil {
-		info = peer.GetSuccessor().ToAPI()
-	} else {
-		info = &api.ContactInfo{}
-	}
-
-	return
-}
-
-func (peer *Peer) Notify(ctx context.Context, in_sender *api.ContactInfo) (ret *api.Void, err error) {
-	sender := NewContactInfoFromAPI(in_sender)
-
-	logger.Debug("Notify: %s", sender.Address)
-
-	if peer.network.predecessor == nil || sender.Id.Between(peer.network.predecessor.Id, sender.Id) {
-		peer.network.predecessor = sender
-		peer.Poke()
-	}
-	ret = &api.Void{}
-
-	return
 }
 
 func NewPeer(info *ContactInfo, port int) (peer Peer) {
@@ -156,7 +48,7 @@ func (peer *Peer) Listen() {
 	}
 
 	grpcServer := grpc.NewServer()
-	api.RegisterChordServer(grpcServer, peer)
+	api.RegisterChordServer(grpcServer, &ServiceWrapper{service: peer})
 
 	if l, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", peer.Port)); err == nil {
 		go grpcServer.Serve(l)
@@ -197,6 +89,9 @@ func (peer *Peer) Connect(address string) (err error) {
 		var successor *ContactInfo
 		logger.Info("Looking up successor to: %s", peer.Info.Id.String())
 		successor, err = peer.network.FindSuccessor(info, peer.Info.Id)
+		if err != nil {
+			logger.Error("Failed to lookup successor: %v", err)
+		}
 		if peer.network.successors.SetSuccessor(0, successor) {
 			peer.network.lastDirtyTime = time.Now()
 		}
@@ -221,4 +116,91 @@ func (peer *Peer) ResponsibleFor(id NodeID) bool {
 func (peer *Peer) Poke() {
 	go func() { peer.stabilizationFunction.tick <- true }()
 	go func() { peer.fixFingersFunction.tick <- true }()
+}
+
+func (peer *Peer) Ping(ctx context.Context) (info *ContactInfo, err error) {
+	logger.Debug("Ping")
+	info = peer.Info
+	if info == nil {
+		logger.Error("Error")
+	}
+	return
+}
+
+func (peer *Peer) FindSuccessor(ctx context.Context, id *NodeID) (info *ContactInfo, err error) {
+	successor := peer.network.successors.GetSuccessor(0)
+
+	logger.Debug("FindSuccessor to: %s", id.String())
+
+	// if (id ∈ (n, successor] )
+	if id.Between(peer.Info.Id, successor.Id) {
+		// return successor;
+		info = successor
+		logger.Debug("returning: %v", info)
+	} else {
+		// forward the query around the circle
+		// n0 = successor.closest_preceding_node(id);
+		var n0 *ContactInfo
+		n0, err = peer.network.ClosestPrecedingNode(successor, *id)
+
+		if err != nil {
+			peer.network.UpdateSuccessorList()
+			successor = peer.network.successors.GetSuccessor(0)
+			n0, err = peer.network.ClosestPrecedingNode(successor, *id)
+		}
+
+		// return n0.find_successor(id);
+		if err == nil {
+			successor, err = peer.network.FindSuccessor(n0, *id)
+			if err != nil {
+				logger.Error("successor's FindSuccessor call failed: %v", err)
+				return
+			}
+			info = successor
+		}
+		logger.Debug("returning: %v", info)
+	}
+
+	return
+}
+
+func (peer *Peer) ClosestPrecedingNode(ctx context.Context, id *NodeID) (info *ContactInfo, err error) {
+	logger.Debug("ClosestPrecedingNode to: %s", id.String())
+
+	for i := fingerCount - 1; i >= 0; i-- {
+		finger := peer.network.fingerTable.fingers[i]
+		if finger != nil && finger.Id.Between(peer.Info.Id, *id) {
+			info = finger
+			return
+		}
+	}
+
+	info = peer.Info
+
+	return
+}
+
+func (peer *Peer) Predecessor(ctx context.Context) (info *ContactInfo, err error) {
+	logger.Debug("Predecessor")
+	info = peer.GetPredecessor()
+
+	return
+}
+
+func (peer *Peer) Successor(ctx context.Context) (info *ContactInfo, err error) {
+	logger.Debug("Successor")
+	info = peer.GetSuccessor()
+
+	return
+}
+
+func (peer *Peer) Notify(ctx context.Context, sender *ContactInfo) (err error) {
+	logger.Debug("Notify: %s", sender.Address)
+
+	if peer.network.predecessor == nil || sender.Id.Between(peer.network.predecessor.Id, sender.Id) {
+		peer.network.predecessor = sender
+		peer.Poke()
+	}
+
+	return
 }

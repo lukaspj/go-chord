@@ -33,7 +33,7 @@ func (m *Void) Reset()         { *m = Void{} }
 func (m *Void) String() string { return proto.CompactTextString(m) }
 func (*Void) ProtoMessage()    {}
 func (*Void) Descriptor() ([]byte, []int) {
-	return fileDescriptor_chord_0bbd9cf7cbf2f034, []int{0}
+	return fileDescriptor_chord_60da2256c3abf9d6, []int{0}
 }
 func (m *Void) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Void.Unmarshal(m, b)
@@ -65,7 +65,7 @@ func (m *Id) Reset()         { *m = Id{} }
 func (m *Id) String() string { return proto.CompactTextString(m) }
 func (*Id) ProtoMessage()    {}
 func (*Id) Descriptor() ([]byte, []int) {
-	return fileDescriptor_chord_0bbd9cf7cbf2f034, []int{1}
+	return fileDescriptor_chord_60da2256c3abf9d6, []int{1}
 }
 func (m *Id) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Id.Unmarshal(m, b)
@@ -110,7 +110,7 @@ func (m *NodeId) Reset()         { *m = NodeId{} }
 func (m *NodeId) String() string { return proto.CompactTextString(m) }
 func (*NodeId) ProtoMessage()    {}
 func (*NodeId) Descriptor() ([]byte, []int) {
-	return fileDescriptor_chord_0bbd9cf7cbf2f034, []int{2}
+	return fileDescriptor_chord_60da2256c3abf9d6, []int{2}
 }
 func (m *NodeId) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NodeId.Unmarshal(m, b)
@@ -150,7 +150,7 @@ func (m *ContactInfo) Reset()         { *m = ContactInfo{} }
 func (m *ContactInfo) String() string { return proto.CompactTextString(m) }
 func (*ContactInfo) ProtoMessage()    {}
 func (*ContactInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_chord_0bbd9cf7cbf2f034, []int{3}
+	return fileDescriptor_chord_60da2256c3abf9d6, []int{3}
 }
 func (m *ContactInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ContactInfo.Unmarshal(m, b)
@@ -192,10 +192,10 @@ func (m *ContactInfo) GetPayload() []byte {
 }
 
 func init() {
-	proto.RegisterType((*Void)(nil), "Void")
-	proto.RegisterType((*Id)(nil), "Id")
-	proto.RegisterType((*NodeId)(nil), "NodeId")
-	proto.RegisterType((*ContactInfo)(nil), "ContactInfo")
+	proto.RegisterType((*Void)(nil), "chord.Void")
+	proto.RegisterType((*Id)(nil), "chord.Id")
+	proto.RegisterType((*NodeId)(nil), "chord.NodeId")
+	proto.RegisterType((*ContactInfo)(nil), "chord.ContactInfo")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -228,7 +228,7 @@ func NewChordClient(cc *grpc.ClientConn) ChordClient {
 
 func (c *chordClient) Ping(ctx context.Context, in *Void, opts ...grpc.CallOption) (*ContactInfo, error) {
 	out := new(ContactInfo)
-	err := c.cc.Invoke(ctx, "/Chord/Ping", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chord.Chord/Ping", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +237,7 @@ func (c *chordClient) Ping(ctx context.Context, in *Void, opts ...grpc.CallOptio
 
 func (c *chordClient) FindSuccessor(ctx context.Context, in *Id, opts ...grpc.CallOption) (*ContactInfo, error) {
 	out := new(ContactInfo)
-	err := c.cc.Invoke(ctx, "/Chord/FindSuccessor", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chord.Chord/FindSuccessor", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +246,7 @@ func (c *chordClient) FindSuccessor(ctx context.Context, in *Id, opts ...grpc.Ca
 
 func (c *chordClient) ClosestPrecedingNode(ctx context.Context, in *Id, opts ...grpc.CallOption) (*ContactInfo, error) {
 	out := new(ContactInfo)
-	err := c.cc.Invoke(ctx, "/Chord/ClosestPrecedingNode", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chord.Chord/ClosestPrecedingNode", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +255,7 @@ func (c *chordClient) ClosestPrecedingNode(ctx context.Context, in *Id, opts ...
 
 func (c *chordClient) Predecessor(ctx context.Context, in *Void, opts ...grpc.CallOption) (*ContactInfo, error) {
 	out := new(ContactInfo)
-	err := c.cc.Invoke(ctx, "/Chord/Predecessor", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chord.Chord/Predecessor", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +264,7 @@ func (c *chordClient) Predecessor(ctx context.Context, in *Void, opts ...grpc.Ca
 
 func (c *chordClient) Successor(ctx context.Context, in *Void, opts ...grpc.CallOption) (*ContactInfo, error) {
 	out := new(ContactInfo)
-	err := c.cc.Invoke(ctx, "/Chord/Successor", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chord.Chord/Successor", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +273,7 @@ func (c *chordClient) Successor(ctx context.Context, in *Void, opts ...grpc.Call
 
 func (c *chordClient) Notify(ctx context.Context, in *ContactInfo, opts ...grpc.CallOption) (*Void, error) {
 	out := new(Void)
-	err := c.cc.Invoke(ctx, "/Chord/Notify", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/chord.Chord/Notify", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +304,7 @@ func _Chord_Ping_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Chord/Ping",
+		FullMethod: "/chord.Chord/Ping",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ChordServer).Ping(ctx, req.(*Void))
@@ -322,7 +322,7 @@ func _Chord_FindSuccessor_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Chord/FindSuccessor",
+		FullMethod: "/chord.Chord/FindSuccessor",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ChordServer).FindSuccessor(ctx, req.(*Id))
@@ -340,7 +340,7 @@ func _Chord_ClosestPrecedingNode_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Chord/ClosestPrecedingNode",
+		FullMethod: "/chord.Chord/ClosestPrecedingNode",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ChordServer).ClosestPrecedingNode(ctx, req.(*Id))
@@ -358,7 +358,7 @@ func _Chord_Predecessor_Handler(srv interface{}, ctx context.Context, dec func(i
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Chord/Predecessor",
+		FullMethod: "/chord.Chord/Predecessor",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ChordServer).Predecessor(ctx, req.(*Void))
@@ -376,7 +376,7 @@ func _Chord_Successor_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Chord/Successor",
+		FullMethod: "/chord.Chord/Successor",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ChordServer).Successor(ctx, req.(*Void))
@@ -394,7 +394,7 @@ func _Chord_Notify_Handler(srv interface{}, ctx context.Context, dec func(interf
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Chord/Notify",
+		FullMethod: "/chord.Chord/Notify",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ChordServer).Notify(ctx, req.(*ContactInfo))
@@ -403,7 +403,7 @@ func _Chord_Notify_Handler(srv interface{}, ctx context.Context, dec func(interf
 }
 
 var _Chord_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "Chord",
+	ServiceName: "chord.Chord",
 	HandlerType: (*ChordServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -435,26 +435,26 @@ var _Chord_serviceDesc = grpc.ServiceDesc{
 	Metadata: "chord.proto",
 }
 
-func init() { proto.RegisterFile("chord.proto", fileDescriptor_chord_0bbd9cf7cbf2f034) }
+func init() { proto.RegisterFile("chord.proto", fileDescriptor_chord_60da2256c3abf9d6) }
 
-var fileDescriptor_chord_0bbd9cf7cbf2f034 = []byte{
-	// 273 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x91, 0xdf, 0x4a, 0xc3, 0x30,
-	0x14, 0xc6, 0xd7, 0xff, 0xec, 0x74, 0x8a, 0x1c, 0x04, 0x4b, 0x41, 0x94, 0xb0, 0x8b, 0x81, 0xd0,
-	0x8b, 0xf9, 0x06, 0x16, 0x84, 0xde, 0x48, 0x99, 0xe0, 0xc5, 0xee, 0x62, 0x4f, 0xb6, 0x06, 0x4a,
-	0x53, 0x92, 0x2a, 0xec, 0x7d, 0x7d, 0x10, 0x49, 0xb6, 0xa1, 0xe2, 0x76, 0x77, 0x4e, 0xf2, 0xf1,
-	0xfb, 0x7d, 0x24, 0x90, 0x36, 0xad, 0xd2, 0x54, 0x0c, 0x5a, 0x8d, 0x8a, 0xc5, 0x10, 0xbe, 0x29,
-	0x49, 0x6c, 0x01, 0x7e, 0x45, 0x78, 0x09, 0xbe, 0xa4, 0xcc, 0xbb, 0xf7, 0x16, 0xd3, 0x95, 0x2f,
-	0x09, 0x11, 0xc2, 0x96, 0x9b, 0x36, 0xf3, 0xdd, 0x89, 0x9b, 0x59, 0x0e, 0xf1, 0x8b, 0x22, 0x51,
-	0x11, 0x5e, 0x41, 0xf0, 0xc9, 0x3b, 0x17, 0x9f, 0xad, 0xec, 0xc8, 0xd6, 0x90, 0x96, 0xaa, 0x1f,
-	0x79, 0x33, 0x56, 0xfd, 0x46, 0x61, 0x06, 0x09, 0x27, 0xd2, 0xc2, 0x98, 0x03, 0xf3, 0xb8, 0xe2,
-	0x8d, 0x13, 0x59, 0x6c, 0xba, 0x4c, 0x8a, 0x3d, 0xcf, 0x19, 0x33, 0x48, 0x06, 0xbe, 0xeb, 0x14,
-	0xa7, 0x2c, 0x70, 0xdc, 0xe3, 0xba, 0xfc, 0xf2, 0x20, 0x2a, 0x6d, 0x73, 0xbc, 0x85, 0xb0, 0x96,
-	0xfd, 0x16, 0xa3, 0xc2, 0x56, 0xcf, 0x67, 0xc5, 0x2f, 0x27, 0x9b, 0xe0, 0x1c, 0x2e, 0x9e, 0x65,
-	0x4f, 0xaf, 0x1f, 0x4d, 0x23, 0x8c, 0x51, 0x1a, 0x83, 0xa2, 0xfa, 0x9f, 0x7a, 0x80, 0xeb, 0xb2,
-	0x53, 0x46, 0x98, 0xb1, 0xd6, 0xa2, 0x11, 0x24, 0xfb, 0xad, 0xad, 0x71, 0x3a, 0x3c, 0x87, 0xb4,
-	0xd6, 0x82, 0xc4, 0x01, 0x78, 0x46, 0xcc, 0x60, 0xfa, 0x23, 0x3d, 0x93, 0xb9, 0xb3, 0xaf, 0x37,
-	0xca, 0xcd, 0x0e, 0xff, 0xdc, 0xe4, 0xfb, 0x38, 0x9b, 0x3c, 0x45, 0xeb, 0x80, 0x0f, 0xf2, 0x3d,
-	0x76, 0xdf, 0xf3, 0xf8, 0x1d, 0x00, 0x00, 0xff, 0xff, 0x73, 0x52, 0xcf, 0x89, 0xad, 0x01, 0x00,
-	0x00,
+var fileDescriptor_chord_60da2256c3abf9d6 = []byte{
+	// 282 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x51, 0x4f, 0x4b, 0xc3, 0x30,
+	0x14, 0xdf, 0xfa, 0x6f, 0xf4, 0xd5, 0x89, 0x3c, 0x3c, 0x94, 0x82, 0x20, 0x39, 0x4d, 0x84, 0x32,
+	0xe6, 0xc1, 0xbb, 0x05, 0xa1, 0x17, 0x29, 0x13, 0x3c, 0x78, 0x32, 0xf6, 0x65, 0x6b, 0xa0, 0x34,
+	0x25, 0xa9, 0xc2, 0xbe, 0x93, 0x1f, 0x52, 0x92, 0x75, 0xb8, 0x83, 0xe2, 0x6e, 0xef, 0x97, 0xfc,
+	0xfe, 0x25, 0x0f, 0x92, 0xba, 0x51, 0x9a, 0xf2, 0x5e, 0xab, 0x41, 0x61, 0xe8, 0x00, 0x8b, 0x20,
+	0x78, 0x51, 0x92, 0xd8, 0x02, 0xbc, 0x92, 0xf0, 0x1c, 0x3c, 0x49, 0xe9, 0xf4, 0x7a, 0xba, 0x88,
+	0xd7, 0x9e, 0x24, 0x44, 0x08, 0x1a, 0x6e, 0x9a, 0xd4, 0x73, 0x27, 0x6e, 0x66, 0x19, 0x44, 0x4f,
+	0x8a, 0x44, 0x49, 0x78, 0x01, 0xfe, 0x27, 0x6f, 0x1d, 0xfd, 0x6c, 0x6d, 0x47, 0xf6, 0x06, 0x49,
+	0xa1, 0xba, 0x81, 0xd7, 0x43, 0xd9, 0x6d, 0x14, 0xa6, 0x30, 0xe3, 0x44, 0x5a, 0x18, 0x33, 0x7a,
+	0x1e, 0x20, 0x5e, 0xb9, 0x20, 0x6b, 0x9b, 0xac, 0xe6, 0xf9, 0xbe, 0xd7, 0xde, 0xd5, 0xe5, 0xa6,
+	0x30, 0xeb, 0xf9, 0xae, 0x55, 0x9c, 0x52, 0xdf, 0xb9, 0x1f, 0xe0, 0xea, 0xcb, 0x83, 0xb0, 0xb0,
+	0x74, 0xbc, 0x81, 0xa0, 0x92, 0xdd, 0x16, 0x93, 0x51, 0x6e, 0x9f, 0x91, 0xe1, 0x08, 0x8e, 0x5a,
+	0xb0, 0x09, 0x2e, 0x61, 0xfe, 0x28, 0x3b, 0x7a, 0xfe, 0xa8, 0x6b, 0x61, 0x8c, 0xd2, 0x18, 0x8f,
+	0xb4, 0xf2, 0x2f, 0xc5, 0x3d, 0x5c, 0x16, 0xad, 0x32, 0xc2, 0x0c, 0x95, 0x16, 0xb5, 0x20, 0xd9,
+	0x6d, 0x6d, 0xbd, 0xff, 0x85, 0x4b, 0x48, 0x2a, 0x2d, 0x48, 0x8c, 0x41, 0x27, 0x94, 0xcb, 0x21,
+	0xfe, 0x29, 0x76, 0x02, 0xff, 0xd6, 0xfe, 0xff, 0x20, 0x37, 0x3b, 0xfc, 0xe5, 0x3e, 0x3b, 0x36,
+	0x60, 0x93, 0x87, 0xf0, 0xd5, 0xe7, 0xbd, 0x7c, 0x8f, 0xdc, 0xce, 0xef, 0xbe, 0x03, 0x00, 0x00,
+	0xff, 0xff, 0xf2, 0xd4, 0xad, 0x7d, 0x02, 0x02, 0x00, 0x00,
 }
