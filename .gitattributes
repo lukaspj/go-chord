@@ -1,0 +1,9 @@
+# Default to LF
+* text eol=lf
+
+# Text files
+* text
+
+# Binary files
+*.png binary
+*.jpg binary
