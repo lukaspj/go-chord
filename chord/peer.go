@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 	"context"
-	"github.com/lukaspj/go-chord/api"
 	"google.golang.org/grpc"
+	"github.com/lukaspj/go-chord/api"
 )
 
 const gearDownPeriod = time.Minute
@@ -14,12 +14,6 @@ const stabilizationIntervalStart = time.Second
 const stabilizationIntervalEnd = 5 * time.Minute
 const fixFingersIntervalStart = time.Second
 const fixFingersIntervalEnd = 5 * time.Minute
-
-type ContactInfo struct {
-	Address string `json:"address"`
-	Id      NodeID `json:"id"`
-	Payload []byte `json:"payload"`
-}
 
 type Peer struct {
 	Info                     *ContactInfo

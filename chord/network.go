@@ -3,7 +3,6 @@ package chord
 import (
 	"time"
 	"math/big"
-	"github.com/lukaspj/go-chord/api"
 	"google.golang.org/grpc"
 	"context"
 )
@@ -32,7 +31,7 @@ func NewChordNetwork(info *ContactInfo) (network *chordNetwork) {
 	return
 }
 
-func (network *chordNetwork) Call(contact *ContactInfo, cb func(client api.ChordClient) error) (err error) {
+func (network *chordNetwork) Call(contact *ContactInfo, cb func(client ChordClient) error) (err error) {
 	conn, err := grpc.Dial(contact.Address, grpc.WithInsecure())
 	defer conn.Close()
 
@@ -40,7 +39,7 @@ func (network *chordNetwork) Call(contact *ContactInfo, cb func(client api.Chord
 		logger.Error("error communicating with grpc server [%s]: %v", contact.Address, err)
 		return
 	}
-	client := api.NewChordClient(conn)
+	client := NewChordClient(conn)
 	err = cb(client)
 
 	return
@@ -52,12 +51,8 @@ func (network *chordNetwork) Ping(address string) (info *ContactInfo, err error)
 		Id:      NewEmptyNodeID(),
 	}
 
-	network.Call(info, func(client api.ChordClient) error {
-		var ci *api.ContactInfo
-		ci, err = client.Ping(context.Background(), &api.Void{})
-		if err == nil {
-			info = NewContactInfoFromAPI(ci)
-		}
+	network.Call(info, func(client ChordClient) error {
+		info, err = client.Ping(context.Background())
 		return err
 	})
 
@@ -65,12 +60,8 @@ func (network *chordNetwork) Ping(address string) (info *ContactInfo, err error)
 }
 
 func (network *chordNetwork) FindSuccessor(info *ContactInfo, id NodeID) (res *ContactInfo, err error) {
-	network.Call(info, func(client api.ChordClient) error {
-		var ci *api.ContactInfo
-		ci, err = client.FindSuccessor(context.Background(), &api.Id{Hash: id.String()})
-		if err == nil {
-			res = NewContactInfoFromAPI(ci)
-		}
+	network.Call(info, func(client ChordClient) error {
+		res, err = client.FindSuccessor(context.Background(), id)
 		return err
 	})
 
@@ -78,44 +69,32 @@ func (network *chordNetwork) FindSuccessor(info *ContactInfo, id NodeID) (res *C
 }
 
 func (network *chordNetwork) ClosestPrecedingNode(info *ContactInfo, id NodeID) (res *ContactInfo, err error) {
-	network.Call(info, func(client api.ChordClient) error {
-		var ci *api.ContactInfo
-		ci, err = client.ClosestPrecedingNode(context.Background(), &api.Id{Hash: id.String()})
-		if err == nil {
-			res = NewContactInfoFromAPI(ci)
-		}
+	network.Call(info, func(client ChordClient) error {
+		res, err = client.ClosestPrecedingNode(context.Background(), id)
 		return err
 	})
 	return
 }
 
 func (network *chordNetwork) Predecessor(info *ContactInfo) (res *ContactInfo, err error) {
-	network.Call(info, func(client api.ChordClient) error {
-		var ci *api.ContactInfo
-		ci, err = client.Predecessor(context.Background(), &api.Void{})
-		if err == nil {
-			res = NewContactInfoFromAPI(ci)
-		}
+	network.Call(info, func(client ChordClient) error {
+		res, err = client.Predecessor(context.Background())
 		return err
 	})
 	return
 }
 
 func (network *chordNetwork) Successor(info *ContactInfo) (res *ContactInfo, err error) {
-	network.Call(info, func(client api.ChordClient) error {
-		var ci *api.ContactInfo
-		ci, err = client.Successor(context.Background(), &api.Void{})
-		if err == nil {
-			res = NewContactInfoFromAPI(ci)
-		}
+	network.Call(info, func(client ChordClient) error {
+		res, err = client.Successor(context.Background())
 		return err
 	})
 	return
 }
 
 func (network *chordNetwork) Notify(info *ContactInfo) (err error) {
-	network.Call(info, func(client api.ChordClient) error {
-		_, err = client.Notify(context.Background(), network.localInfo.ToAPI())
+	network.Call(info, func(client ChordClient) error {
+		err = client.Notify(context.Background(), network.localInfo)
 		return err
 	})
 	return

@@ -1,19 +1,18 @@
-package web
+package chord
 
 import (
 	"context"
-	"../../api"
 	"fmt"
-	"../../chord"
+	"github.com/lukaspj/go-chord/api"
 )
 
 type Service interface {
-	Ping(ctx context.Context) (*chord.ContactInfo, error)
-	FindSuccessor(ctx context.Context, id *chord.NodeID) (*chord.ContactInfo, error)
-	ClosestPrecedingNode(ctx context.Context, id *chord.NodeID) (*chord.ContactInfo, error)
-	Predecessor(ctx context.Context) (*chord.ContactInfo, error)
-	Successor(ctx context.Context) (*chord.ContactInfo, error)
-	Notify(ctx context.Context, id *chord.ContactInfo) error
+	Ping(ctx context.Context) (*ContactInfo, error)
+	FindSuccessor(ctx context.Context, id *NodeID) (*ContactInfo, error)
+	ClosestPrecedingNode(ctx context.Context, id *NodeID) (*ContactInfo, error)
+	Predecessor(ctx context.Context) (*ContactInfo, error)
+	Successor(ctx context.Context) (*ContactInfo, error)
+	Notify(ctx context.Context, id *ContactInfo) error
 }
 
 type ServiceWrapper struct {
@@ -25,7 +24,7 @@ func (w *ServiceWrapper) Ping(ctx context.Context, v *api.Void) (*api.ContactInf
 	if c == nil {
 		return &api.ContactInfo{}, err
 	}
-	return c.ToAPI(), err
+	return ContactInfoToAPI(c), err
 }
 
 func (w *ServiceWrapper) FindSuccessor(ctx context.Context, id *api.Id) (*api.ContactInfo, error) {
@@ -37,7 +36,7 @@ func (w *ServiceWrapper) FindSuccessor(ctx context.Context, id *api.Id) (*api.Co
 	if c == nil {
 		return &api.ContactInfo{}, err
 	}
-	return c.ToAPI(), err
+	return ContactInfoToAPI(c), err
 }
 
 func (w *ServiceWrapper) ClosestPrecedingNode(ctx context.Context, id *api.Id) (*api.ContactInfo, error) {
@@ -49,7 +48,7 @@ func (w *ServiceWrapper) ClosestPrecedingNode(ctx context.Context, id *api.Id) (
 	if c == nil {
 		return &api.ContactInfo{}, err
 	}
-	return c.ToAPI(), err
+	return ContactInfoToAPI(c), err
 }
 
 func (w *ServiceWrapper) Predecessor(ctx context.Context, v *api.Void) (*api.ContactInfo, error) {
@@ -57,7 +56,7 @@ func (w *ServiceWrapper) Predecessor(ctx context.Context, v *api.Void) (*api.Con
 	if c == nil {
 		return &api.ContactInfo{}, err
 	}
-	return c.ToAPI(), err
+	return ContactInfoToAPI(c), err
 }
 
 func (w *ServiceWrapper) Successor(ctx context.Context, v *api.Void) (*api.ContactInfo, error) {
@@ -65,7 +64,7 @@ func (w *ServiceWrapper) Successor(ctx context.Context, v *api.Void) (*api.Conta
 	if c == nil {
 		return &api.ContactInfo{}, err
 	}
-	return c.ToAPI(), err
+	return ContactInfoToAPI(c), err
 }
 
 func (w *ServiceWrapper) Notify(ctx context.Context, ci *api.ContactInfo) (*api.Void, error) {
